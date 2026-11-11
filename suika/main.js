@@ -6,7 +6,9 @@ var Engine = Matter.Engine,
     Render = Matter.Render,
     Runner = Matter.Runner,
     Bodies = Matter.Bodies,
-    World = Matter.World;
+    World = Matter.World,
+    // 바디 추가
+    Body = Matter.Body;
 
 // 엔진 선언
 const engine = Engine.create();
@@ -64,6 +66,8 @@ Runner.run(engine);
 // 현재 과일값을 저장할 수 있는 변수
 let currentBody = null;
 let currentFruit = null;
+// 키 조작을 제어하는 변수 생성
+let disableAction = false;
 
 // 과일 떨어지는 함수
 function addFruit() {
@@ -77,7 +81,7 @@ function addFruit() {
         render: {
             sprite: { texture: `${fruit.name}.png`},
         },
-        restitution: 0.2,
+        restitution: 0.2,   // 튕기는 강도
     })
 
     // 현재 과일 값을 저장
@@ -87,4 +91,38 @@ function addFruit() {
     // 월드에 추가
     World.add(world, body);
 }
+
+// 키보드 입력받기
+window.onkeydown = ( event ) => {
+    // 제어 조작 변수가 true 경우 바로 리턴
+    if (disableAction)
+        return;
+
+    switch(event.code) {
+        case "KeyA":
+            Body.setPosition(currentBody, {
+                x: currentBody.position.x - 10,
+                y: currentBody.position.y
+            });
+            break;
+        case "KeyD":
+            Body.setPosition(currentBody, {
+                x: currentBody.position.x + 10,
+                y: currentBody.position.y
+            });
+            break;
+        // 과일 떨어트리기
+        case "KeyS":
+            currentBody.isSleeping = false;
+            disableAction = true;
+
+            setTimeout(() => {
+                // 새로운 과일 추가
+                addFruit();
+                disableAction = false;
+            }, 1000);
+            break;
+    }
+}
+
 addFruit();
