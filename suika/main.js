@@ -1,4 +1,5 @@
 // chapter4 주석7 왼쪽, 오른쪽 이동 제한
+// 강도진, 김관우, 장현우, 김무영 ♥
 
 // fruits.js에 있는 FRUITS 변수를 가져온다.
 import { FRUITS } from "/suika/fruits.js"
