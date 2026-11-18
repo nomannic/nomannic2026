@@ -55,6 +55,7 @@ const ground = Bodies.rectangle(310, 820, 620, 60, {
 
 const topLine = Bodies.rectangle(310, 150, 620, 2, {
                               // x중심점, y중심점, x길이, y길이
+    name : "topLine",
     isStatic: true, // 고정해주는 기능
     isSensor: true, // 충돌판정을 끄고, 충돌 감지만 함
     render: { fillStyle: '#E6B143'}
@@ -73,6 +74,8 @@ let currentBody = null;
 let currentFruit = null;
 // 키 조작을 제어하는 변수 생성
 let disableAction = false;
+// 키 제어 변수 생성
+let interval = null;
 
 // 과일 떨어지는 함수
 function addFruit() {
@@ -105,16 +108,33 @@ window.onkeydown = ( event ) => {
 
     switch(event.code) {
         case "KeyA":
-            Body.setPosition(currentBody, {
-                x: currentBody.position.x - 10,
-                y: currentBody.position.y
-            });
+
+        // 인터벌 변수가 null 이면 넘어감
+        if (interval)
+                return;
+
+            // 인터벌 변수 사용, 밀리초 단위로 함수를 반복
+            interval = setInterval(() => {
+                if ( currentBody.position.x - currentFruit.radius > 30) {
+                    Body.setPosition(currentBody, {
+                        x: currentBody.position.x - 1,
+                        y: currentBody.position.y
+                    });
+                }  
+            }, 5)
+              
             break;
         case "KeyD":
-            Body.setPosition(currentBody, {
-                x: currentBody.position.x + 10,
-                y: currentBody.position.y
-            });
+            if (interval)
+                return;
+            interval = setInterval(() => {
+                if ( currentBody.position.x + currentFruit.radius < 590) {
+                    Body.setPosition(currentBody, {
+                        x: currentBody.position.x + 1,
+                        y: currentBody.position.y
+                    });
+                }
+            }, 5)
             break;
         // 과일 떨어트리기
         case "KeyS":
@@ -130,6 +150,16 @@ window.onkeydown = ( event ) => {
     }
 }
 
+// 인터벌 제어
+window.onkeyup = (event) => {
+    switch (event.code) {
+        case "KeyA":
+        case "KeyD":
+            clearInterval(interval);
+            interval = null;
+    }
+}
+
 // 이벤트 사용
 Events.on(engine, "collisionStart", (event) => {
     // 콜리전 이벤트 발생시 생기는 모든 오브젝트를 비교
@@ -137,6 +167,10 @@ Events.on(engine, "collisionStart", (event) => {
         // 기존 과일의 index를 저장
         const index = collision.bodyA.index;
         
+        // 수박일 경우 처리하지 않음
+        if ( index === FRUITS.length - 1 )
+            return;
+
         // 같은 과일일 경우
         if (collision.bodyA.index == collision.bodyB.index) {
             World.remove(world, [collision.bodyA, collision.bodyB])
@@ -144,19 +178,36 @@ Events.on(engine, "collisionStart", (event) => {
             // 저장한 index값에 +1을 더해 새로 제작
             const newFruit = FRUITS[index + 1];
             const newBody = Bodies.circle(
-            collision.collision.supports[0].x,
-            collision.collision.supports[0].y,
-            newFruit.radius,
-            {
-                // 과일이 합쳐졌으므로 index값 1 증가
-                index : index + 1,
-                // 렌더링 새로 해주기
-                render : { sprite: { texture: `${newFruit.name}.png`}}
-            }
-        )
+                collision.collision.supports[0].x,
+                collision.collision.supports[0].y,
+                newFruit.radius,
+                {
+                    // 과일이 합쳐졌으므로 index값 1 증가
+                    index : index + 1,
+                    // 렌더링 새로 해주기
+                    render : { sprite: { texture: `${newFruit.name}.png`}}
+                }
+            )
 
-        World.add(world, newBody);
-        }      
+            World.add(world, newBody);
+
+            // newBody 지역변수 범위 때문에 World.add 바로 뒤에 종료조건을 넣는다.
+            // 게임 종료 조건
+            if(newBody.index === FRUITS.length - 1) {
+                setTimeout(() => {
+                    alert("You made watermelon!\n축하합니다!")
+                    disableAction = true;
+                })
+            }
+
+        }
+        
+        // 게임 종료 조건
+        if ( !disableAction && (collision.bodyA.name === "topLine" || collision.bodyB.name === "topLine") ){
+            alert("Game Over");
+            disableAction = true;
+        }
+        
     })
 
         
